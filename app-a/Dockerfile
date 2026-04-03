@@ -15,10 +15,10 @@ RUN --mount=type=bind,source=composer.json,target=composer.json \
 # Stage 2: Runtime image
 FROM php:8.3-apache as final
 
-# Install system dependencies and PDO + SQLite extension
-RUN apt-get update && apt-get install -y libsqlite3-dev \
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y libpq-dev \
     && rm -rf /var/lib/apt/lists/* \
-    && docker-php-ext-install pdo pdo_sqlite
+    && docker-php-ext-install pdo pdo_pgsql
 
 # Enable mod_rewrite for Laravel routing
 RUN a2enmod rewrite

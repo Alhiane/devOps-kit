@@ -6,4 +6,29 @@ services:
       - ${APP_PORT}:80
     env_file:
       - .env
+    volumes:
+      - ./:/var/www/html
+      - /var/www/html/vendor
+    depends_on:
+      postgressql-db:
+        condition: service_healthy
 
+  postgressql-db:
+    image: postgres:15
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}" ]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgresql-data:

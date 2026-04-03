@@ -13,17 +13,19 @@ help: ## Show this help
 	@grep -E '(^[a-zA-Z0-9\./_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
 
 ## —— Docker 🐳 ————————————————————————————————————————————————————————
-build: ## Build Docker image
-	@$(DOCKER_COMP) build server
+build: ## Build all Docker images
+	@$(DOCKER_COMP) build
 
-up: ## Start containers
-	@$(DOCKER_COMP) up -d
+up: ## Start all containers
+	@$(DOCKER_COMP) up -d --remove-orphans
 
 down: ## Stop containers
 	@$(DOCKER_COMP) down
 
-restart: ## Restart containers
-	@$(DOCKER_COMP) restart server
+restart: down build up ## Restart containers
+
+bash: ## Open bash shell in server container
+	@$(DOCKER_COMP) exec server bash
 
 ## —— Kubernetes ☸️ ————————————————————————————————————————————————————————
 kind-start: ## Start kind cluster (restarts existing or creates new)
@@ -41,6 +43,10 @@ k-configmap:
 
 k-deploy: ## Apply Deployment + Service to cluster
 	kubectl apply -f pod.yaml
+
+k-reload: build k-load ## Rebuild image, reload into kind and restart pods
+	kubectl rollout restart deployment/app-a-deployment
+	kubectl rollout status deployment/app-a-deployment
 
 k-status: ## Show pods, deployments and services
 	kubectl get pods,deployments,services -l app=app-a
