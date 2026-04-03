@@ -24,6 +24,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: app-a-config
+            - secretRef:
+                name: app-a-secret
           livenessProbe:
             httpGet:
               path: /up

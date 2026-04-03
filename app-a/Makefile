@@ -37,12 +37,16 @@ kind-status: ## Check if kind cluster is reachable
 k-load: ## Load Docker image into kind cluster
 	kind load docker-image $(IMAGE_NAME):$(IMAGE_TAG)
 
-k-configmap:
-	kubectl delete configmap app-a-config --ignore-not-found
-	kubectl create configmap app-a-config --from-env-file=.env
+k-configmap: ## apply configmap from k8s/configmap.yaml
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && \
+	envsubst < k8s/configmap.yaml | kubectl apply -f -
 
-k-deploy: ## Apply Deployment + Service to cluster
-	kubectl apply -f pod.yaml
+k-secret: ## apply secret from k8s/secret.yaml
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && \
+	envsubst < k8s/secret.yaml | kubectl apply -f -
+
+k-deploy: ## Apply Deployment and Service from k8s/pod.yaml
+	kubectl apply -f k8s/pod.yaml
 
 k-reload: build k-load ## Rebuild image, reload into kind and restart pods
 	kubectl rollout restart deployment/app-a-deployment
