@@ -1,0 +1,9 @@
+services:
+  server:
+    build:
+      context: .
+    ports:
+      - ${APP_PORT}:80
+    env_file:
+      - .env
+
