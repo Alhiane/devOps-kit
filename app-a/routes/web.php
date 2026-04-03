@@ -6,6 +6,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/hello', function () {
-    return 'Hello, World!';
+Route::get('/version', function () {
+    return env('APP_VERSION');
 });
