@@ -59,7 +59,7 @@ k-logs: ## Tail logs from running pod
 	kubectl logs -l app=app-a --tail=50
 
 k-delete: ## Remove all k8s resources for this app
-	kubectl delete -f pod.yaml
+	kubectl delete -f k8s/pod.yaml
 	kubectl delete configmap app-a-config
 
 ## —— Full k8s workflow ————————————————————————————————————————————————————
