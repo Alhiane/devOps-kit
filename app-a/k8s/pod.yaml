@@ -30,7 +30,7 @@ spec:
             httpGet:
               path: /up
               port: 80
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 10
 ---
 apiVersion: v1
