@@ -13,17 +13,19 @@ help: ## Show this help
 	@grep -E '(^[a-zA-Z0-9\./_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
 
 ## —— Docker 🐳 ————————————————————————————————————————————————————————
-build: ## Build Docker image
-	@$(DOCKER_COMP) build server
+build: ## Build all Docker images
+	@$(DOCKER_COMP) build
 
-up: ## Start containers
-	@$(DOCKER_COMP) up -d
+up: ## Start all containers
+	@$(DOCKER_COMP) up -d --remove-orphans
 
 down: ## Stop containers
 	@$(DOCKER_COMP) down
 
-restart: ## Restart containers
-	@$(DOCKER_COMP) restart server
+restart: down build up ## Restart containers
+
+bash: ## Open bash shell in server container
+	@$(DOCKER_COMP) exec server bash
 
 ## —— Kubernetes ☸️ ————————————————————————————————————————————————————————
 kind-start: ## Start kind cluster (restarts existing or creates new)
@@ -35,12 +37,20 @@ kind-status: ## Check if kind cluster is reachable
 k-load: ## Load Docker image into kind cluster
 	kind load docker-image $(IMAGE_NAME):$(IMAGE_TAG)
 
-k-configmap:
-	kubectl delete configmap app-a-config --ignore-not-found
-	kubectl create configmap app-a-config --from-env-file=.env
+k-configmap: ## apply configmap from k8s/configmap.yaml
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && \
+	envsubst < k8s/configmap.yaml | kubectl apply -f -
 
-k-deploy: ## Apply Deployment + Service to cluster
-	kubectl apply -f pod.yaml
+k-secret: ## apply secret from k8s/secret.yaml
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && \
+	envsubst < k8s/secret.yaml | kubectl apply -f -
+
+k-deploy: ## Apply Deployment and Service from k8s/pod.yaml
+	kubectl apply -f k8s/pod.yaml
+
+k-reload: build k-load ## Rebuild image, reload into kind and restart pods
+	kubectl rollout restart deployment/app-a-deployment
+	kubectl rollout status deployment/app-a-deployment
 
 k-status: ## Show pods, deployments and services
 	kubectl get pods,deployments,services -l app=app-a
@@ -49,7 +59,7 @@ k-logs: ## Tail logs from running pod
 	kubectl logs -l app=app-a --tail=50
 
 k-delete: ## Remove all k8s resources for this app
-	kubectl delete -f pod.yaml
+	kubectl delete -f k8s/pod.yaml
 	kubectl delete configmap app-a-config
 
 ## —— Full k8s workflow ————————————————————————————————————————————————————
