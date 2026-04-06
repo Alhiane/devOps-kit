@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -8,4 +9,10 @@ Route::get('/', function () {
 
 Route::get('/version', function () {
     return env('APP_VERSION');
+});
+
+
+Route::get('/users', function () {
+    $users = User::select('name')->get();
+    return $users;
 });
