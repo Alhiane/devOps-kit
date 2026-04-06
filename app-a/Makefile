@@ -29,7 +29,7 @@ bash: ## Open bash shell in server container
 
 ## —— Kubernetes ☸️ ————————————————————————————————————————————————————————
 kind-start: ## Start kind cluster (restarts existing or creates new)
-	docker start $$(docker ps -aq --filter "name=kind") || kind create cluster
+	docker start $$(docker ps -aq --filter "name=kind") || kind create cluster --config=k8s/kind-config.yaml
 
 kind-status: ## Check if kind cluster is reachable
 	kubectl cluster-info --context kind-kind
@@ -46,7 +46,7 @@ k-secret: ## apply secret from k8s/secret.yaml
 	envsubst < k8s/secret.yaml | kubectl apply -f -
 
 k-deploy: ## Apply all manifests in k8s/ folder (skips configmap + secret, handled by their own targets)
-	kubectl apply -f k8s/pod.yaml -f k8s/postgres.yaml
+	kubectl apply -f k8s/pod.yaml -f k8s/postgres.yaml -f k8s/ingress.yaml
 
 k-reload: build k-load ## Rebuild image, reload into kind and restart pods
 	kubectl rollout restart deployment/app-a-deployment
