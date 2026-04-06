@@ -1,0 +1,86 @@
+## —— 1. Storage: reserve persistent storage for DB data ——————————————————————
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  labels:
+    app: postgressql-db
+spec:
+  accessModes:
+    - ReadWriteOnce   # one pod can read/write at a time (fine for single postgres pod)
+  resources:
+    requests:
+      storage: 1Gi    # request 1GB of storage from the cluster
+
+---
+## —— 2. Deployment: run the postgres container ————————————————————————————
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgressql-db
+  labels:
+    app: postgressql-db
+spec:
+  replicas: 1   # always 1 for a database — multiple replicas need special setup
+  selector:
+    matchLabels:
+      app: postgressql-db
+  template:
+    metadata:
+      labels:
+        app: postgressql-db
+    spec:
+      containers:
+        - name: postgressql-db
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            # Pull DB name from ConfigMap
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: app-a-config
+                  key: DB_DATABASE
+            # Pull DB user and password from Secret
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-a-secret
+                  key: DB_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-a-secret
+                  key: DB_PASSWORD
+          volumeMounts:
+            # Mount the PVC into the path postgres uses to store data
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        # Connect the PVC to this pod
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+
+---
+## —— 3. Service: give postgres a stable hostname inside the cluster ————————
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgressql-db    # this is the hostname your Laravel app uses (DB_HOST)
+  labels:
+    app: postgressql-db
+spec:
+  type: ClusterIP         # internal only — postgres is not exposed outside the cluster
+  selector:
+    app: postgressql-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
