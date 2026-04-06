@@ -40,7 +40,7 @@ metadata:
   labels:
     app: app-a
 spec:
-  type: LoadBalancer # NodePort if you want to access it via NodePort # LoadBalancer for cloud environments # ClusterIP for internal access only
+  # type: LoadBalancer # NodePort if you want to access it via NodePort # LoadBalancer for cloud environments # ClusterIP for internal access only
   selector:
     app: app-a
   ports:
