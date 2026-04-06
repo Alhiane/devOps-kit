@@ -59,7 +59,6 @@ k-refresh: k-configmap k-secret
 k-artisan: ## Run artisan command — usage: make k-artisan CMD="migrate"
 	kubectl exec -it $$(kubectl get pod -l app=app-a -o jsonpath='{.items[0].metadata.name}') -- php artisan $(CMD)
 
-
 k-status: ## Show all pods, deployments and services
 	kubectl get pods,deployments,services,pvc
 
