@@ -15,6 +15,28 @@ spec:
       labels:
         app: app-a
     spec:
+      initContainers:
+        - name: wait-for-database
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z postgressql-db 5432; do echo waiting for database; sleep 2; done;']      
+        - name: migrate
+          image: app-a-server:latest
+          imagePullPolicy: Never
+          command: ["php", "artisan", "migrate", "--force"]
+          envFrom:
+            - configMapRef:
+                name: app-a-config
+            - secretRef:
+                name: app-a-secret
+        - name: seed
+          image: app-a-server:latest
+          imagePullPolicy: Never
+          command: ["php", "artisan", "db:seed", "--force"]
+          envFrom:
+            - configMapRef:
+                name: app-a-config
+            - secretRef:
+                name: app-a-secret
       containers:
         - name: app-a
           image: app-a-server:latest
@@ -47,4 +69,4 @@ spec:
     - protocol: TCP
       port: 7070
       targetPort: 80
-      nodePort: 30001
+      
